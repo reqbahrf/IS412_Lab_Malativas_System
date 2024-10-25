@@ -419,6 +419,15 @@
     </div>
 
     @include('footer')
+    <script>
+        const PRODUCTS_URL_ENDPOINTS = {
+            GET_ALL_PRODUCTS: '{{ route('Product.index') }}',
+            ADD_PRODUCT: '{{ route('Product.store') }}',
+            UPDATE_PRODUCT: '{{ route('Product.update', ':id') }}',
+            DELETE_PRODUCT: '{{ route('Product.destroy', ':id') }}',
+        }
+
+    </script>
     @vite('resources/js/app.js')
   </body>
 </html>

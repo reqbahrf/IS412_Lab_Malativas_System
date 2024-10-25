@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,7 +19,14 @@ class ProductController extends Controller
     public function index()
     {
         $products = Product::with('salesInfo')->get();
-        return response()->json($products);
+        $products->transform(function ($product) {
+            if ($product->product_image_url) {
+                $product->product_image_url = asset('storage/' . $product->product_image_url);
+            }
+            return $product;
+        });
+
+        return response()->json($products, 200);
     }
 
     /**
@@ -28,33 +36,37 @@ class ProductController extends Controller
     {
         $validatedData = $request->validate([
             'product-image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',  // Validate the image
-            'P-name' => 'required|string|max:255',
+            'product-name' => 'required|string|max:255',
             'category' => 'required|string|max:255',
             'quantity' => 'required|integer',
             'price' => 'required|numeric',
         ]);
 
-        // Handle the image upload
-        if ($request->hasFile('product-image')) {
-            $image = $request->file('product-image');
-            $fileName = Str::slug($request->input('P-name')) . '.' . $image->getClientOriginalExtension();
+        try {
 
-            $imagePath = Storage::disk('public')->putFileAs('product_images', $image, $fileName);
+            if ($request->hasFile('product-image')) {
+                $image = $request->file('product-image');
+                $fileName = Str::slug($request->input('product-name')) . '.' . $image->getClientOriginalExtension();
+                $imagePath = Storage::disk('public')->putFileAs('Products-image', $image, $fileName);
 
-            // Append image path to the validated data
-            $validatedData['product_image_url'] = $imagePath;
+                $validatedData['product_image_url'] = $imagePath;
+            }
+
+            // Create the new product
+           Product::create([
+                'product_image_url' => $validatedData['product_image_url'],
+                'product_name' => $validatedData['product-name'],
+                'product_categories' => $validatedData['category'],
+                'quantity' => $validatedData['quantity'],
+                'price' => $validatedData['price'],
+            ]);
+
+
+            return response()->json(['message' => 'Product Added Successfully'], 201);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        // Create the new product
-        $product = Product::create([
-            'product_image_url' => $validatedData['product_image_url'],
-            'product_name' => $validatedData['P-name'],
-            'product_categories' => $validatedData['category'],
-            'quantity' => $validatedData['quantity'],
-            'price' => $validatedData['price'],
-        ]);
-
-        return response()->json(['message' => 'Product Added Successfully', 'product' => $product], 201);
+        // Handle the image upload
     }
 
     /**

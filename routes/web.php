@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProductController;
 use Illuminate\Support\Facades\Route;
 
 
@@ -17,7 +18,10 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::post('/login', [AuthController::class, 'login'])
     ->name('submit_login');
 
-Route::get('/dashboard', function () { return view('dashboard');})
-    ->name('dashboard')
-    ->middleware('auth');
+
+
+    Route::get('/dashboard', function () { return view('dashboard');})
+        ->name('dashboard');
+
+    Route::resource('/Product', ProductController::class);
 

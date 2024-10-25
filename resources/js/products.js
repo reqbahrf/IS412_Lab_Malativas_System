@@ -25,189 +25,113 @@ logoutBtn.on('click', () => {
  * Represents a Product in the inventory.
  * @class
  */
-class product {
-    /**
-     * Initializes a new instance of the class.
-     * @constructor
-     * @this {product}
-     * @description
-     * The constructor retrieves the product list and sold product list from
-     * local storage. If the lists are not available, they default to empty arrays.
-     */
+// Assuming you are using fetch API for HTTP requests. Alternatively, you can use axios for cleaner syntax.
+
+class Product {
     constructor() {
-      this.productList = JSON.parse(localStorage.getItem("productList")) || [];
-      this.soldProductList =
-        JSON.parse(localStorage.getItem("soldProductList")) || [];
+      this.csrfToken = $('meta[name="csrf-token"]').attr('content');
+      this.getAllProductsUrl = PRODUCTS_URL_ENDPOINTS.GET_ALL_PRODUCTS;
+      this.addProductUrl = PRODUCTS_URL_ENDPOINTS.ADD_PRODUCT;
+      this.updateProductUrl = PRODUCTS_URL_ENDPOINTS.UPDATE_PRODUCT;
+      this.deleteProductUrl = PRODUCTS_URL_ENDPOINTS.DELETE_PRODUCT;
     }
 
-    /**
-     * Saves the current product list to local storage.
-     * @function
-     * @this {product}
-     * @returns {void}
-     * @description
-     * This function converts the `productList` array to a JSON string
-     * and stores it in local storage under the key "productList".
-     */
-    saveToLocalStorage() {
-      localStorage.setItem("productList", JSON.stringify(this.productList));
-    }
-
-    /**
-     * Saves the current sold product list to local storage.
-     * @function
-     * @this {product}  // Replace with the actual name of your class
-     * @returns {void}
-     * @description
-     * This function converts the `soldProductList` array to a JSON string
-     * and stores it in local storage under the key "soldProductList".
-     */
-    saveSoldProduct() {
-      localStorage.setItem(
-        "soldProductList",
-        JSON.stringify(this.soldProductList),
-      );
-    }
-
-    /**
-     * Adds a new product to the product list and saves it to local storage.
-     * @async
-     * @function
-     * @this {product}
-     * @param {Object} product - The product object to be added.
-     * @param {number} product.id - The unique identifier for the product (will be assigned automatically).
-     * @param {string} product.name - The name of the product.
-     * @param {string} product.category - The category of the product.
-     * @param {number} product.quantity - The quantity of the product.
-     * @param {number} product.price - The price of the product.
-     * @returns {Promise<Object>} A promise that resolves to an object containing a success message and status.
-     * @throws {Error} Throws an error if there is an issue adding the product.
-     * @description
-     * This method assigns a unique ID to the new product, adds it to the `productList`,
-     * and saves the updated list to local storage. It returns a success message if the
-     * operation is successful, or an error message if an exception occurs.
-     */
-    async addProduct(product) {
+    // Fetch all products from the Laravel API
+    async getAllProducts() {
       try {
-        product.id = this.productList.length + 1;
-        this.productList.push(product);
-        this.saveToLocalStorage();
-        return { message: "Product Added Successfully", success: true };
+        const response = await $.ajax(this.getAllProductsUrl, {
+          method: 'GET',
+          headers: {
+            'X-CSRF-TOKEN': this.csrfToken,
+          },
+        });
+        return response;  // Return list of products
       } catch (error) {
-        return { message: "Error" + error, success: false };
+        console.error("Error fetching products:", error);
+        return { message: "Error: " + error, success: false };
       }
     }
 
-    /**
-     * Updates an existing product in the product list and saves the changes to local storage.
-     * @async
-     * @function
-     * @this {product}
-     * @param {number} id - The unique identifier of the product to be updated.
-     * @param {Object} updatedProduct - An object containing the updated product information.
-     * @param {string} [updatedProduct.name] - The updated name of the product.
-     * @param {string} [updatedProduct.category] - The updated category of the product.
-     * @param {number} [updatedProduct.quantity] - The updated quantity of the product.
-     * @param {number} [updatedProduct.price] - The updated price of the product.
-     * @returns {Promise<Object>} A promise that resolves to an object containing a success message and status.
-     * @throws {Error} Throws an error if the product is not found or if there is an issue updating the product.
-     * @description
-     * This method searches for a product by its unique ID, updates its information with
-     * the provided values, and saves the updated product list to local storage. It
-     * returns a success message if the update is successful, or an error message if
-     * the product is not found or another issue occurs.
-     */
+    // Add a new product using POST request
+    async addProduct(image, name, category, quantity, price) {
+
+      try {
+        const formData = new FormData();
+       formData.append("product-image", image, image.name);
+       formData.append("product-name", name);
+       formData.append("category", category);
+       formData.append("quantity", quantity);
+       formData.append("price", price);
+        const response = await $.ajax(this.addProductUrl, {
+          method: 'POST',
+          headers: {
+            'X-CSRF-TOKEN': this.csrfToken,
+          },
+          processData: false, // Ensure data is not processed
+          contentType: false, // Ensure content type is not set
+          data: formData,
+        });
+
+        return { message: "Product Added Successfully", success: true, response };
+      } catch (error) {
+        return { message: "Error: " + error, success: false };
+      }
+    }
+
+    // Update an existing product using PUT request
     async updateProduct(id, updatedProduct) {
       try {
-        const index = this.productList.findIndex((product) => product.id === id);
-        if (index !== -1) {
-          this.productList[index] = {
-            ...this.productList[index],
-            ...updatedProduct,
-          };
-          this.saveToLocalStorage();
-          return { message: "Product Updated Successfully", success: true };
-        } else {
-          throw new Error("Product not found");
-        }
+        const response = await fetch(`${this.apiUrl}/${id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedProduct),
+        });
+        const data = await response.json();
+        return { message: "Product Updated Successfully", success: true, data };
       } catch (error) {
-        return { message: error, success: false };
+        return { message: "Error: " + error, success: false };
       }
     }
 
-    /**
-     * Deletes a product from the product list by its unique identifier and saves the changes to local storage.
-     * @async
-     * @function
-     * @this {product}
-     * @param {number} id - The unique identifier of the product to be deleted.
-     * @returns {Promise<Object>} A promise that resolves to an object containing a success message and status.
-     * @throws {Error} Throws an error if there is an issue deleting the product.
-     * @description
-     * This method removes a product from the product list based on the provided ID and updates the local storage to reflect the changes. It returns a success message if the deletion is successful.
-     */
+    // Delete a product using DELETE request
     async deleteProduct(id) {
       try {
-        this.productList = this.productList.filter(
-          (product) => product.id !== id,
-        );
-        this.saveToLocalStorage();
-        return { message: "Product Deleted Successfully", success: true };
+        const response = await fetch(`${this.apiUrl}/${id}`, {
+          method: 'DELETE',
+        });
+        if (response.ok) {
+          return { message: "Product Deleted Successfully", success: true };
+        } else {
+          throw new Error('Failed to delete product');
+        }
       } catch (error) {
-        return { message: "Error" + error, success: false };
+        return { message: "Error: " + error, success: false };
       }
     }
 
-    /**
-     * Processes an order for a specific product by updating its quantity in the product list
-     * and tracking sold products. Saves the updated data to local storage.
-     * @async
-     * @function
-     * @this {product} // Replace with the actual name of your class
-     * @param {number} id - The unique identifier of the product being ordered.
-     * @param {number} orderProductQuantity - The quantity of the product to be ordered.
-     * @param {number} orderProductTotalPrice - The total price for the ordered quantity of the product.
-     * @returns {Promise<Object>} A promise that resolves to an object containing a success message and status.
-     * @throws {Error} Throws an error if there is an issue processing the order.
-     * @description
-     * This method adjusts the quantity of the specified product in the product list
-     * and records the order in the sold product list. If the product already exists in the
-     * sold product list, it updates the quantity and total price. It returns a success message
-     * upon successful order processing or an error message if the product is not found.
-     */
+    // Process an order by adjusting product quantity and adding to sold products
     async orderProduct(id, orderProductQuantity, orderProductTotalPrice) {
-      console.log("this is called");
       try {
-        const parsedOrderQuantity = parseInt(orderProductQuantity);
-        const parsedTotalPrice = parseFloat(orderProductTotalPrice);
-        const product = this.productList.find((product) => product.id === id);
-
+        const product = await this.getProductById(id); // Assuming a method to get a single product by ID
         if (product) {
-          product.quantity -= parsedOrderQuantity;
+          product.quantity -= orderProductQuantity;
 
-          const existingSoldProduct = this.soldProductList.find(
-            (soldProduct) => soldProduct?.id === id,
-          );
+          const soldProduct = {
+            id: product.id,
+            name: product.name,
+            quantity: orderProductQuantity,
+            price: orderProductTotalPrice,
+          };
 
-          console.log(existingSoldProduct);
-          if (existingSoldProduct) {
-            existingSoldProduct.quantity += parsedOrderQuantity;
-            existingSoldProduct.price += parsedTotalPrice;
-          } else {
-            const soldProduct = {
-              id: product.id,
-              name: product.name,
-              quantity: parsedOrderQuantity,
-              price: parsedTotalPrice,
-            };
-            this.soldProductList.push(soldProduct);
-          }
+          // You would need to handle sold products as a separate entity in Laravel if required
 
-          this.saveSoldProduct();
-          this.saveToLocalStorage();
+          const updatedProduct = await this.updateProduct(id, { quantity: product.quantity });
           return {
-            message: `New Order for Product ${product.name}`,
+            message: `Order for Product ${product.name} processed successfully`,
             success: true,
+            updatedProduct,
           };
         } else {
           return { message: "Product Not Found", success: false };
@@ -217,81 +141,48 @@ class product {
       }
     }
 
-    /**
-     * Calculates the total quantity and total price of all products in the product list.
-     * @async
-     * @function
-     * @this {product}
-     * @returns {Promise<Object>} A promise that resolves to an object containing the total quantity and total price.
-     * @throws {Error} Throws an error if there is an issue during the calculation process.
-     * @description
-     * This method iterates through the `productList` and computes the total quantity and
-     * total price by summing up the quantity and the product of quantity and price for each product.
-     * It returns an object containing the total quantity and total price.
-     */
-    async calculateTotalQuantityAndPrice() {
+    // Helper to get a single product by its ID (if required)
+    async getProductById(id) {
       try {
-        const totalQuantity = this.productList.reduce(
-          (acc, product) => acc + parseFloat(product.quantity),
-          0,
-        );
-        const totalPrice = this.productList.reduce(
-          (acc, product) =>
-            acc + parseFloat(product.quantity) * parseFloat(product.price),
-          0,
-        );
-
-        return { totalQuantity, totalPrice };
+        const response = await fetch(`${this.apiUrl}/${id}`);
+        const product = await response.json();
+        return product;
       } catch (error) {
-        return { message: "Error" + error, success: false };
+        console.error("Error fetching product:", error);
+        return null;
       }
     }
 
-    /**
-     * Retrieves details about the sold products including names, total quantity, and total price.
-     *
-     * This method processes the `soldProductList` array, extracting the names of sold products,
-     * calculating the total quantity sold, and the total revenue generated from sold products.
-     *
-     * @returns {Object} An object containing:
-     * - `soldProductNames` {string[]} - Array of names of the sold products.
-     * - `totalQuantitySold` {number} - The total quantity of products sold.
-     * - `totalPriceSold` {number} - The total price from the sold products.
-     *
-     * @example
-     * const { soldProductNames, totalQuantitySold, totalPriceSold } = product.getSoldProducts();
-     * console.log(soldProductNames); // ['Product A', 'Product B']
-     * console.log(totalQuantitySold); // 10
-     * console.log(totalPriceSold); // 250.75
-     */
-    getSoldProducts() {
-      const soldProductNames = this.soldProductList.map(
-        (soldProduct) => soldProduct.name,
-      );
-      const totalQuantitySold = this.soldProductList.reduce(
-        (acc, soldProduct) => acc + parseFloat(soldProduct.quantity),
-        0,
-      );
-      const totalPriceSold = this.soldProductList.reduce(
-        (acc, soldProduct) =>
-          acc + parseFloat(soldProduct.quantity) * parseFloat(soldProduct.price),
-        0,
-      );
+    // Calculate total quantity and price of all products
+    async calculateTotalQuantityAndPrice() {
+      try {
+        const products = await this.getAllProducts();
+        const totalQuantity = products.reduce((acc, product) => acc + parseInt(product.quantity), 0);
+        const totalPrice = products.reduce((acc, product) => acc + parseFloat(product.quantity) * parseFloat(product.price), 0);
 
-      return { soldProductNames, totalQuantitySold, totalPriceSold };
+        return { totalQuantity, totalPrice };
+      } catch (error) {
+        return { message: "Error: " + error, success: false };
+      }
     }
 
-    /**
-     * Retrieves the list of all products.
-     * @returns {Array<Object>} An array of product objects from the product list.
-     * @description
-     * This method returns the current list of products stored in the productList property.
-     * Each product object in the array contains details such as id, name, category, quantity, and price.
-     */
-    getAllProducts() {
-      return this.productList;
+    // Retrieve sold products (you need to implement this logic on the Laravel side)
+    async getSoldProducts() {
+      try {
+        const response = await fetch(`${this.apiUrl}/sold-products`); // Assuming sold products route
+        const soldProducts = await response.json();
+        const soldProductNames = soldProducts.map(product => product.name);
+        const totalQuantitySold = soldProducts.reduce((acc, product) => acc + product.quantity, 0);
+        const totalPriceSold = soldProducts.reduce((acc, product) => acc + product.price, 0);
+
+        return { soldProductNames, totalQuantitySold, totalPriceSold };
+      } catch (error) {
+        return { message: "Error: " + error, success: false };
+      }
     }
   }
+
+
 
   /**
    * A class to handle toast notifications in the user interface.
@@ -403,7 +294,7 @@ class product {
     }
   }
 
-  const manageProduct = new product();
+  const manageProduct = new Product();
   const toastClass = new toast();
   const modalClass = new modal();
 
@@ -418,7 +309,7 @@ class product {
     $("#totalPrice").text(`₱ ${result?.totalPrice}`);
   };
 
-  calculateTotalQuantityAndPrice();
+ // calculateTotalQuantityAndPrice();
   /**
    * Retrieves the list of all products from the `manageProduct` module and dynamically generates a table of products.
    * The product list is rendered inside an HTML table with the ID `#productList`, replacing any existing content.
@@ -444,8 +335,10 @@ class product {
    * @example
    * getProductsList(); // Dynamically renders a list of products in the table.
    */
-  const getProductsList = () => {
-    const products = manageProduct.getAllProducts();
+  const getProductsList = async () => {
+    const products = await manageProduct.getAllProducts();
+    const baseUrl = window.location.origin;
+    console.log(products);
     const tablebody = $("#productList");
     tablebody.empty();
 
@@ -454,14 +347,14 @@ class product {
       row.append($('<td class="border-y px-4 py-2">').text(product.id));
       row.append(
         $('<td class="border-y px-4 py-2">').html(
-          `<img src="${product.image}" class="object-cover rounded-full mx-auto" style="width: 90px; height: 90px;" alt="Product Image">`,
+          `<img src="${product.product_image_url}" class="object-cover rounded-full mx-auto" style="width: 90px; height: 90px;" alt="Product Image">`,
         ),
       );
       row.append(
-        $('<td class="border-y px-4 py-2 text-center">').text(product.name),
+        $('<td class="border-y px-4 py-2 text-center">').text(product.product_name),
       );
       row.append(
-        $('<td class="border-y px-4 py-2 text-center">').text(product.category),
+        $('<td class="border-y px-4 py-2 text-center">').text(product.product_categories),
       );
       row.append(
         $('<td class="border-y px-4 py-2 text-center">').text(product.quantity),
@@ -493,7 +386,7 @@ class product {
     $("#totalSoldItems").text(results.totalQuantitySold ?? 0);
     $("#totalRevenue").text(results.totalPriceSold ?? 0);
   };
-  getSoldProducts();
+//   getSoldProducts();
   getProductsList();
 
   /**
@@ -503,7 +396,7 @@ class product {
    *
    * @param {Event} e - The submit event object.
    */
-  $("#addProductForm").on("submit", function (e) {
+  $("#addProductForm").on("submit", async function (e) {
     e.preventDefault();
     const formData = new FormData(this);
     const productImage = formData.get("product-image");
@@ -511,39 +404,32 @@ class product {
     const productCategory = formData.get("category");
     const productQuantity = formData.get("quantity");
     const productPrice = formData.get("price");
+try {
 
-    const reader = new FileReader();
+    const result = await manageProduct.addProduct(
+        productImage,
+        productName,
+        productCategory,
+        productQuantity,
+        productPrice
+      );
+     getProductsList();
+    // getSoldProducts();
+    // calculateTotalQuantityAndPrice();
+    result.success === true
+      ? toastClass.showToast(
+          "bg-green-100 border border-green-400",
+          result.message,
+        )
+      : toastClass.showToast(
+          "bg-red-100 border border-red-400",
+          result.message,
+        );
+    console.log(result)
+} catch (error) {
+    console.error(error)
 
-    /**
-     * Handles the onload event of the FileReader, creating a new product object from the loaded image and adding it to the product list.
-     *
-     * @param {Event} event - The onload event object.
-     * @return {void}
-     */
-    reader.onload = async function (event) {
-      const base64Image = event.target.result;
-      const newProduct = {
-        image: base64Image,
-        name: productName,
-        category: productCategory,
-        quantity: productQuantity,
-        price: productPrice,
-      };
-      const result = await manageProduct.addProduct(newProduct);
-      getProductsList();
-      getSoldProducts();
-      calculateTotalQuantityAndPrice();
-      result.success === true
-        ? toastClass.showToast(
-            "bg-green-100 border border-green-400",
-            result.message,
-          )
-        : toastClass.showToast(
-            "bg-red-100 border border-red-400",
-            result.message,
-          );
-    };
-    reader.readAsDataURL(productImage);
+}
   });
 
   /**
