@@ -32,6 +32,7 @@ class Product {
       this.csrfToken = $('meta[name="csrf-token"]').attr('content');
       this.getAllProductsUrl = PRODUCTS_URL_ENDPOINTS.GET_ALL_PRODUCTS;
       this.addProductUrl = PRODUCTS_URL_ENDPOINTS.ADD_PRODUCT;
+      this.showProduct = PRODUCTS_URL_ENDPOINTS.SHOW_PRODUCT;
       this.updateProductUrl = PRODUCTS_URL_ENDPOINTS.UPDATE_PRODUCT;
       this.deleteProductUrl = PRODUCTS_URL_ENDPOINTS.DELETE_PRODUCT;
     }
@@ -79,21 +80,36 @@ class Product {
     }
 
     // Update an existing product using PUT request
-    async updateProduct(id, updatedProduct) {
-      try {
-        const response = await fetch(`${this.apiUrl}/${id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updatedProduct),
-        });
-        const data = await response.json();
-        return { message: "Product Updated Successfully", success: true, data };
-      } catch (error) {
-        return { message: "Error: " + error, success: false };
+    async updateProduct(id, image = null, name, category, quantity, price ) {
+        try {
+            const updateProductData = new FormData();
+            if (image) {
+              updateProductData.append("product-image", image, image.name);
+            }
+            updateProductData.append('_method', 'PUT');
+            updateProductData.append("name", name);
+            updateProductData.append("category", category);
+            updateProductData.append("quantity", quantity);
+            updateProductData.append("price", price);
+
+
+            const response = await $.ajax(this.updateProductUrl.replace(':id', id), {
+              method: 'POST',
+              headers: {
+                'X-CSRF-TOKEN': this.csrfToken,
+              },
+              processData: false, // Ensure data is not processed
+              contentType: false, // Ensure content type is not set
+              data: updateProductData,
+            });
+          console.log('Response:', response); // Log the response
+
+          return { message: "Product Updated Successfully", success: true, response };
+        } catch (error) {
+          console.error('Error:', error); // Log the error
+          return { message: "Error: " + error, success: false };
+        }
       }
-    }
 
     // Delete a product using DELETE request
     async deleteProduct(id) {
@@ -144,7 +160,7 @@ class Product {
     // Helper to get a single product by its ID (if required)
     async getProductById(id) {
       try {
-        const response = await fetch(`${this.apiUrl}/${id}`);
+        const response = await fetch(this.showProduct.replace(':id', id));
         const product = await response.json();
         return product;
       } catch (error) {
@@ -337,8 +353,6 @@ class Product {
    */
   const getProductsList = async () => {
     const products = await manageProduct.getAllProducts();
-    const baseUrl = window.location.origin;
-    console.log(products);
     const tablebody = $("#productList");
     tablebody.empty();
 
@@ -389,13 +403,7 @@ class Product {
 //   getSoldProducts();
   getProductsList();
 
-  /**
-   * Event listener for the submit event on the #addProductForm element.
-   *
-   * @description Handles the submission of the add product form, creates a new product object, and adds it to the product list. It also updates the product list table and displays a toast message indicating the result of the operation.
-   *
-   * @param {Event} e - The submit event object.
-   */
+
   $("#addProductForm").on("submit", async function (e) {
     e.preventDefault();
     const formData = new FormData(this);
@@ -432,113 +440,45 @@ try {
 }
   });
 
-  /**
-   * Handles the click event for the ".edit" button inside the #productList table.
-   * It opens a modal pre-filled with the product data and allows for product updates.
-   *
-   * @event click
-   * @param {jQuery.Event} event - The jQuery click event.
-   *
-   * @listens click#productList .edit
-   *
-   * @fires updateProduct - Updates the product information.
-   *
-   * @requires modalClass.getUpdateModalInstance - Gets the modal instance for updating products.
-   * @requires manageProduct.updateProduct - Updates the product via an API or database interaction.
-   * @requires getProductsList - Refreshes the product list.
-   * @requires getSoldProducts - Refreshes the list of sold products.
-   * @requires calculateTotalQuantityAndPrice - Recalculates the total quantity and price.
-   * @requires toastClass.showToast - Displays a toast message indicating the success or failure of the update.
-   */
-  $("#productList").on("click", ".edit", function () {
+  $("#productList").on("click", ".edit", async function () {
     const tableRow = $(this).closest("tr");
-
-    const product_id = tableRow.data("product-id");
-    const product_imageBase64 = tableRow.find("img").attr("src");
-    const product_name = tableRow.find("td:eq(2)").text().trim();
-    const product_category = tableRow.find("td:eq(3)").text().trim();
-    const product_quantity = tableRow.find("td:eq(4)").text().trim();
-    const product_price = tableRow.find("td:eq(5)").text().trim();
+    const productId = tableRow.data("product-id");
+    const productImage = tableRow.find("img").attr("src");
+    const productName = tableRow.find("td:eq(2)").text().trim();
+    const productCategory = tableRow.find("td:eq(3)").text().trim();
+    const productQuantity = parseInt(tableRow.find("td:eq(4)").text().trim());
+    const productPrice = parseFloat(tableRow.find("td:eq(5)").text().trim());
 
     const modal = modalClass.getUpdateModalInstance();
+    const form = modal.find("#updateProductForm");
 
-    const modalBody = modal.find(".modal-body");
-    const updateform = modalBody.find("#updateProductForm");
+    form.find(".image-preview").attr("src", productImage);
+    form.find('input[name="name"]').val(productName);
+    form.find('select[name="category"]').val(productCategory);
+    form.find('input[name="quantity"]').val(productQuantity);
+    form.find('input[name="price"]').val(productPrice);
 
-    updateform.find(".image-preview").attr("src", `${product_imageBase64}`);
-    updateform
-      .find('input[name="updated-product-image"]')
-      .attr("data-imgBased64", product_imageBase64);
-    updateform.find('input[name="updated-name"]').val(product_name);
-    updateform.find('select[name="updated-category"]').val(product_category);
-    updateform.find('input[name="update-quantity"]').val(product_quantity);
-    updateform.find('input[name="update-price"]').val(product_price);
-
-    modal.find("#updateProductForm").on("submit", async function (e) {
+    form.off("submit").on("submit", async function (e) {
       e.preventDefault();
 
       const updateFormData = new FormData(this);
-      let updateProductImage = updateFormData.get("updated-product-image");
-      const updateProductName = updateFormData.get("updated-name");
-      const updateProductCategory = updateFormData.get("updated-category");
-      const updateProductQuantity = updateFormData.get("update-quantity");
-      const updateProductPrice = updateFormData.get("update-price");
+      const updatedProductImage = updateFormData.get("product-image");
+      const updatedProductName = updateFormData.get("name");
+      const updatedProductCategory = updateFormData.get("category");
+      const updatedProductQuantity = parseInt(updateFormData.get("quantity"));
+      const updatedProductPrice = parseFloat(updateFormData.get("price"));
 
-      if (updateProductImage && updateProductImage.size > 0) {
-
-        // Image is a File object, we need to convert it to Base64
-        const reader = new FileReader();
-        reader.onload = async function (event) {
-          const base64Image = event.target.result;
-          const updatedProduct = {
-            image: base64Image,
-            name: updateProductName,
-            category: updateProductCategory,
-            quantity: updateProductQuantity,
-            price: updateProductPrice,
-          };
-          const result = await manageProduct.updateProduct(
-            product_id,
-            updatedProduct,
-          );
-          getProductsList();
-          getSoldProducts();
-          calculateTotalQuantityAndPrice();
-          modalClass.closeModal();
-          result.success === true
-            ? toastClass.showToast(
-                "bg-green-100 border border-green-400",
-                result.message,
-              )
-            : toastClass.showToast(
-                "bg-red-100 border border-red-400",
-                result.message,
-              );
-        };
-        reader.readAsDataURL(updateProductImage);
-      } else {
-        updateProductImage = $('input[name="updated-product-image"]').attr(
-          "data-imgBased64",
-        );
-
-        // Image is already in Base64, no need to read again
-        const updatedProduct = {
-          image: $('input[name="updated-product-image"]').attr("data-imgBased64"),
-          name: updateProductName,
-          category: updateProductCategory,
-          quantity: updateProductQuantity,
-          price: updateProductPrice,
-        };
-
-        console.log(updatedProduct);
-
+      try {
         const result = await manageProduct.updateProduct(
-          product_id,
-          updatedProduct,
+          productId,
+          updatedProductImage,
+          updatedProductName,
+          updatedProductCategory,
+          updatedProductQuantity,
+          updatedProductPrice
         );
-        modalClass.closeModal();
-        getSoldProducts();
         getProductsList();
+        modalClass.closeModal();
         result.success === true
           ? toastClass.showToast(
               "bg-green-100 border border-green-400",
@@ -548,6 +488,8 @@ try {
               "bg-red-100 border border-red-400",
               result.message,
             );
+      } catch (error) {
+        console.error(error);
       }
     });
   });

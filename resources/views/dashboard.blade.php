@@ -178,11 +178,11 @@
             </button>
           </div>
           <div class="px-4 pb-4">
-            <form id="updateProductForm" class="hidden">
+            <form id="updateProductForm" enctype="multipart/form-data" class="hidden">
               <div class="space-y-6">
                 <div class="mb-4 flex items-center justify-start">
                   <label for="image" class="mr-4">Upload Image</label>
-                  <input type="file" name="updated-product-image" accept="image/jpeg, image/png"  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 image-input">
+                  <input type="file" name="product-image" accept="image/jpeg, image/png"  class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 image-input">
                   <button type="button" class="p-2 rounded-full bg-red-500 text-white hover:bg-red-700 unselect-image" >&#x2715;</button>
                 </div>
                 <div class="mb-4">
@@ -190,11 +190,11 @@
                 </div>
                 <div>
                   <label for="Product_name" class="block text-sm font-medium text-gray-700">Name</label>
-                  <input type="text" name="updated-name" id="Product_name" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm" />
+                  <input type="text" name="name" id="Product_name" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm" />
                 </div>
                 <div>
                   <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
-                  <select name="updated-category" id="category" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm">
+                  <select name="category" id="category" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm">
                     <option value="">Select a Category</option>
                     <option value="building_materials">Building Materials</option>
                     <option value="tools">Tools</option>
@@ -207,12 +207,12 @@
                 </div>
                 <div class="flex items-center w-full">
                   <div class="w-3/6">
-                    <label for="update-quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
-                    <input type="text" name="update-quantity" id="quantity" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm number-only" />
+                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input type="text" name="quantity" id="quantity" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm number-only" />
                   </div>
                   <div class="w-3/6">
                     <label for="updated-price" class="block text-sm font-medium text-gray-700">Price</label>
-                    <input type="text" name="update-price" id="price" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm number-only" />
+                    <input type="text" name="price" id="price" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm number-only" />
                   </div>
                 </div>
                 <div class="flex justify-end">
@@ -423,6 +423,7 @@
         const PRODUCTS_URL_ENDPOINTS = {
             GET_ALL_PRODUCTS: '{{ route('Product.index') }}',
             ADD_PRODUCT: '{{ route('Product.store') }}',
+            SHOW_PRODUCT: '{{ route('Product.show', ':id') }}',
             UPDATE_PRODUCT: '{{ route('Product.update', ':id') }}',
             DELETE_PRODUCT: '{{ route('Product.destroy', ':id') }}',
         }

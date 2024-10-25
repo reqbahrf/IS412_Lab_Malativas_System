@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -47,7 +48,7 @@ class ProductController extends Controller
             if ($request->hasFile('product-image')) {
                 $image = $request->file('product-image');
                 $fileName = Str::slug($request->input('product-name')) . '.' . $image->getClientOriginalExtension();
-                $imagePath = Storage::disk('public')->putFileAs('Products-image', $image, $fileName);
+                $imagePath = Storage::disk('public')->putFileAs('Products-image', $image, uniqid() . '_' . $fileName);
 
                 $validatedData['product_image_url'] = $imagePath;
             }
@@ -72,9 +73,9 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $product)
+    public function show(Product $id, Request $request)
     {
-        //
+
     }
 
     /**
@@ -88,9 +89,16 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product $product)
+    public function update(Request $request)
     {
-        //
+
+        $validated = $request->validate([
+            'product-image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',  // Validate the image
+            'name' => 'required',
+            'category' => 'required',
+            'quantity' => 'required|numeric',
+            'price' => 'required|numeric'
+        ]);
     }
 
     /**
