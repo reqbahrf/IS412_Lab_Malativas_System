@@ -18,7 +18,7 @@ class AuthController extends Controller
             ]);
 
             $credentials = [
-                $this->username($request->loginUsed) => $request->loginUsed,
+                $this->loginUse($request->loginUsed) => $request->loginUsed,
                 'password' => $request->password
             ];
 
@@ -44,7 +44,7 @@ class AuthController extends Controller
 
     }
 
-    protected function username($userCredentials)
+    protected function loginUse($userCredentials)
     {
 
         if(filter_var($userCredentials, FILTER_VALIDATE_EMAIL)){

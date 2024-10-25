@@ -178,7 +178,7 @@
             </button>
           </div>
           <div class="px-4 pb-4">
-            <form id="updateProductForm" enctype="multipart/form-data" class="hidden">
+            <form id="updateProductForm" enctype="multipart/form-data" class="hidden" data-action="UPDATE">
               <div class="space-y-6">
                 <div class="mb-4 flex items-center justify-start">
                   <label for="image" class="mr-4">Upload Image</label>
@@ -222,7 +222,7 @@
                 </div>
               </div>
             </form>
-            <form id="orderProductForm" class="hidden">
+            <form id="orderProductForm" enctype="multipart/form-data" class="hidden" data-action="ORDER">
               <div class="grid sm:grid-cols-1 md:grid-cols-2">
                 <div>
                   <img src="" class="orderProduct" alt="Product Image">

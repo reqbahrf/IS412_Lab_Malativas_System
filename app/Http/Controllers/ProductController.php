@@ -73,8 +73,17 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $id, Request $request)
+    public function show($id, Request $request)
     {
+        try {
+            $product = Product::find($id);
+            if (!$product) {
+                return response()->json(['message' => 'Product not found'], 404);
+            }
+            return response()->json($product, 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'Error: ' . $e->getMessage()], 500);
+        }
 
     }
 
@@ -89,23 +98,106 @@ class ProductController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request)
+    public function update(Request $request, $id)
     {
 
         $validated = $request->validate([
             'product-image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',  // Validate the image
-            'name' => 'required',
-            'category' => 'required',
-            'quantity' => 'required|numeric',
-            'price' => 'required|numeric'
+            'Action' => 'required|in:UPDATE,ORDER',
+            'name' => 'required_if:Action,UPDATE',
+            'category' => 'required_if:Action,UPDATE',
+            'quantity' => 'required_if:Action,UPDATE|numeric',
+            'price' => 'required_if:Action,UPDATE|numeric',
+            'Ordered_quantity' => 'required_if:Action,ORDER|numeric',
+            'Ordered_Total' => 'required_if:Action,ORDER|numeric',
         ]);
+        try {
+
+            switch($validated['Action']) {
+                case 'UPDATE':
+                    return $this->updateProduct($id, $validated);
+                    break;
+                case 'ORDER':
+                    return $this->orderProduct($id, $validated);
+                    break;
+            }
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
+
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Product $product)
+    public function destroy($id)
     {
-        //
+        try {
+            $product = Product::find($id);
+            if (!$product) {
+                return response()->json(['message' => 'Product not found'], 404);
+            }
+            $product->delete();
+            return response()->json(['message' => 'Product Deleted Successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    protected function updateProduct($id, $validated)
+    {
+        try {
+
+            $updateData = [
+                'product_name' => $validated['name'],
+                'product_categories' => $validated['category'],
+                'quantity' => $validated['quantity'],
+                'price' => $validated['price'],
+            ];
+
+            if (isset($validated['product-image'])) {
+                $image = $validated['product-image'];
+                $fileName = Str::slug($validated['name']) . '.' . $image->getClientOriginalExtension();
+                $imagePath = Storage::disk('public')
+                    ->putFileAs('Products-image', $image, uniqid() . '_' . $fileName);
+
+                $updateData = array_merge($updateData, ['product_image_url' => $imagePath]);
+            }
+
+            Product::where('id', $id)->update($updateData);
+
+            return response()->json(['message' => 'Product Updated Successfully'], 200);
+
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    protected function orderProduct($id,$validated)
+    {
+        try {
+                    $orderedProductQuantity = $validated['Ordered_quantity'];
+                    $orderedProductTotalPrice = $validated['Ordered_Total'];
+                    $product = Product::find($id);
+
+                    if ($orderedProductQuantity > $product->quantity) {
+                        return response()->json(['error' => 'Insufficient quantity in stock'], 422);
+                    }
+
+                    $product->quantity -= $orderedProductQuantity;
+                    $product->salesInfo()->create(
+                        [
+                            'product_name' => $product->product_name,
+                            'total_qty' =>  $orderedProductQuantity,
+                            'total_price' => $orderedProductTotalPrice
+                        ]);
+                    $product->save();
+                    return response()->json(['message' => 'Product Ordered Successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+
     }
 }
