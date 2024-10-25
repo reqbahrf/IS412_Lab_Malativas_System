@@ -11,25 +11,24 @@ class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $request->validate([
-            'loginUsed' => 'required|email|sometimes',
-            'password' => 'required|min:8'
-        ]);
-
         try {
+            $request->validate([
+                'loginUsed' => 'required|sometimes:email',
+                'password' => 'required|min:8'
+            ]);
+
             $credentials = [
                 $this->username($request->loginUsed) => $request->loginUsed,
                 'password' => $request->password
             ];
 
             if (!Auth::attempt($credentials)) {
-                return redirect()->route('login')->with('error', 'Invalid Credentials');
+                return redirect()->route('login')->with('error', 'Invalid Credentials')->withInput();
             }
 
             return redirect()->route('dashboard');
-
         } catch (Exception $e) {
-            return redirect()->route('login')->with('error', $e->getMessage());
+            return redirect()->route('login')->with('error', $e->getMessage())->withInput();
         }
     }
 
