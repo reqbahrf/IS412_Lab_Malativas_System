@@ -19,7 +19,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::with('salesInfo')->get();
+        $products = Product::get();
         $products->transform(function ($product) {
             if ($product->product_image_url) {
                 $product->product_image_url = asset('storage/' . $product->product_image_url);
@@ -76,7 +76,7 @@ class ProductController extends Controller
     public function show($id, Request $request)
     {
         try {
-            $product = Product::find($id);
+            $product = Product::findOrFail($id);
             if (!$product) {
                 return response()->json(['message' => 'Product not found'], 404);
             }
@@ -135,10 +135,11 @@ class ProductController extends Controller
     public function destroy($id)
     {
         try {
-            $product = Product::find($id);
+            $product = Product::findOrFail($id);
             if (!$product) {
                 return response()->json(['message' => 'Product not found'], 404);
             }
+            $product->product_image_url && Storage::disk('public')->delete($product->product_image_url);
             $product->delete();
             return response()->json(['message' => 'Product Deleted Successfully'], 200);
         } catch (Exception $e) {
@@ -149,6 +150,8 @@ class ProductController extends Controller
     protected function updateProduct($id, $validated)
     {
         try {
+            $product = Product::findOrFail($id);
+            $product->product_image_url && Storage::disk('public')->delete($product->product_image_url);
 
             $updateData = [
                 'product_name' => $validated['name'],
@@ -166,7 +169,7 @@ class ProductController extends Controller
                 $updateData = array_merge($updateData, ['product_image_url' => $imagePath]);
             }
 
-            Product::where('id', $id)->update($updateData);
+            $product->update($updateData);
 
             return response()->json(['message' => 'Product Updated Successfully'], 200);
 

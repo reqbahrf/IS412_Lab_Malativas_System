@@ -26,6 +26,7 @@ logoutBtn.on('click', () => {
 class Product {
   constructor() {
     this.csrfToken = $('meta[name="csrf-token"]').attr('content');
+    this.getSales = PRODUCTS_URL_ENDPOINTS.GET_SALES;
     this.getAllProductsUrl = PRODUCTS_URL_ENDPOINTS.GET_ALL_PRODUCTS;
     this.addProductUrl = PRODUCTS_URL_ENDPOINTS.ADD_PRODUCT;
     this.showProduct = PRODUCTS_URL_ENDPOINTS.SHOW_PRODUCT;
@@ -42,7 +43,7 @@ class Product {
           'X-CSRF-TOKEN': this.csrfToken,
         },
       });
-      return response; // Return list of products
+      return response;
     } catch (error) {
       console.error('Error fetching products:', error);
       return { message: 'Error: ' + error, success: false };
@@ -141,7 +142,7 @@ class Product {
   // Process an order by adjusting product quantity and adding to sold products
   async orderProduct(id, action, orderedProductQuantity, orderedProductTotalPrice) {
     try {
-      const product = await this.getProductById(id); 
+      const product = await this.getProductById(id);
       if (product) {
         product.quantity -= orderedProductQuantity;
 
@@ -184,38 +185,22 @@ class Product {
     }
   }
 
-  // Calculate total quantity and price of all products
-  async calculateTotalQuantityAndPrice() {
-    try {
-      const products = await this.getAllProducts();
-      const totalQuantity = products.reduce(
-        (acc, product) => acc + parseInt(product.quantity),
-        0
-      );
-      const totalPrice = products.reduce(
-        (acc, product) =>
-          acc + parseFloat(product.quantity) * parseFloat(product.price),
-        0
-      );
-
-      return { totalQuantity, totalPrice };
-    } catch (error) {
-      return { message: 'Error: ' + error, success: false };
-    }
-  }
-
   // Retrieve sold products (you need to implement this logic on the Laravel side)
   async getSoldProducts() {
     try {
-      const response = await fetch(`${this.apiUrl}/sold-products`); // Assuming sold products route
-      const soldProducts = await response.json();
-      const soldProductNames = soldProducts.map((product) => product.name);
-      const totalQuantitySold = soldProducts.reduce(
-        (acc, product) => acc + product.quantity,
+      const response = await $.ajax(this.getSales, {
+        method: 'GET',
+        headers: {
+          'X-CSRF-TOKEN': this.csrfToken,
+        }
+      }); // Assuming sold products route
+      const soldProductNames = response.map((product) => product.product_name);
+      const totalQuantitySold = response.reduce(
+        (acc, product) => acc + product.total_qty,
         0
       );
-      const totalPriceSold = soldProducts.reduce(
-        (acc, product) => acc + product.price,
+      const totalPriceSold = response.reduce(
+        (acc, product) => acc + product.total_price,
         0
       );
 
@@ -341,18 +326,6 @@ const toastClass = new toast();
 const modalClass = new modal();
 
 /**
- * Calculates the total quantity and price of all products and updates the corresponding HTML elements.
- *
- * @return {void}
- */
-const calculateTotalQuantityAndPrice = async () => {
-  const result = await manageProduct.calculateTotalQuantityAndPrice();
-  $('#totalQuantity').text(result?.totalQuantity);
-  $('#totalPrice').text(`₱ ${result?.totalPrice}`);
-};
-
-// calculateTotalQuantityAndPrice();
-/**
  * Retrieves the list of all products from the `manageProduct` module and dynamically generates a table of products.
  * The product list is rendered inside an HTML table with the ID `#productList`, replacing any existing content.
  *
@@ -381,6 +354,19 @@ const getProductsList = async () => {
   const products = await manageProduct.getAllProducts();
   const tablebody = $('#productList');
   tablebody.empty();
+
+  const totalQuantity = products.reduce(
+    (acc, product) => acc + parseInt(product.quantity),
+    0
+  );
+  const totalPrice = products.reduce(
+    (acc, product) =>
+      acc + parseFloat(product.quantity) * parseFloat(product.price),
+    0
+  );
+
+  $('#totalQuantity').text(totalQuantity);
+  $('#totalPrice').text(`₱ ${totalPrice}`);
 
   products.forEach((product) => {
     const row = $('<tr data-product-id="' + product.id + '" class="border">');
@@ -416,22 +402,28 @@ const getProductsList = async () => {
   });
 };
 
-const getSoldProducts = () => {
-  const results = manageProduct.getSoldProducts();
+const getSoldProducts = async () => {
+try {
 
-  const soldProductContainer = $('#recentOrderList');
-  soldProductContainer.empty();
+    const results = await manageProduct.getSoldProducts();
+    console.log(results)
 
-  results.soldProductNames.forEach((product) => {
-    const productList = $(`<li class="ms-2">${product}</li>`);
-    soldProductContainer.append(productList);
-  });
+    const soldProductContainer = $('#recentOrderList');
+    soldProductContainer.empty();
 
-  $('#totalSoldItems').text(results.totalQuantitySold ?? 0);
-  $('#totalRevenue').text(results.totalPriceSold ?? 0);
+    results.soldProductNames.forEach((product) => {
+      const productList = $(`<li class="ms-2">${product}</li>`);
+      soldProductContainer.append(productList);
+    });
+
+    $('#totalSoldItems').text(results.totalQuantitySold ?? 0);
+    $('#totalRevenue').text(results.totalPriceSold ?? 0);
+} catch (error) {
+    console.error
+}
 };
-//   getSoldProducts();
 getProductsList();
+getSoldProducts();
 
 $('#addProductForm').on('submit', async function (e) {
   e.preventDefault();
@@ -450,8 +442,7 @@ $('#addProductForm').on('submit', async function (e) {
       productPrice
     );
     getProductsList();
-    // getSoldProducts();
-    // calculateTotalQuantityAndPrice();
+    getSoldProducts();
     result.success === true
       ? toastClass.showToast(
           'bg-green-100 border border-green-400',
@@ -600,11 +591,11 @@ $('#productList').on('click', '.order', function () {
               result.message
             );
         getProductsList();
+        getSoldProducts();
 
     } catch (error) {
 console.log(error);
     }
-    //getSoldProducts();
   });
 });
 
@@ -636,7 +627,6 @@ $('#productList').on('click', '.delete', async function () {
       )
     : toastClass.showToast('bg-red-100 border border-red-400', result.message);
   getProductsList();
-  calculateTotalQuantityAndPrice();
 });
 
 /**

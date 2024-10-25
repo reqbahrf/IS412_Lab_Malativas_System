@@ -421,6 +421,7 @@
     @include('footer')
     <script>
         const PRODUCTS_URL_ENDPOINTS = {
+            GET_SALES : '{{ route('sold-products') }}',
             GET_ALL_PRODUCTS: '{{ route('Product.index') }}',
             ADD_PRODUCT: '{{ route('Product.store') }}',
             SHOW_PRODUCT: '{{ route('Product.show', ':id') }}',
