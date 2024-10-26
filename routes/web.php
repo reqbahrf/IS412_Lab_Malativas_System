@@ -19,13 +19,16 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::post('/login', [AuthController::class, 'login'])
     ->name('submit_login');
 
+Route::middleware('auth')->group(function () {
 
-
-    Route::get('/dashboard', function () { return view('dashboard');})
+    Route::get('/dashboard', function () {
+        return view('dashboard');})
         ->name('dashboard');
 
     Route::resource('/Product', ProductController::class);
 
     Route::get('/sold-products', SalesController::class)
         ->name('sold-products');
+});
+
 
