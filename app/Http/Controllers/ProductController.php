@@ -37,7 +37,7 @@ class ProductController extends Controller
     {
         $validatedData = $request->validate([
             'product-image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',  // Validate the image
-            'product-name' => 'required|string|max:255',
+            'product-name' => 'required|string|unique:products_info,product_name',
             'category' => 'required|string|max:255',
             'quantity' => 'required|integer',
             'price' => 'required|numeric',
@@ -67,7 +67,7 @@ class ProductController extends Controller
         } catch (Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }
-        // Handle the image upload
+
     }
 
     /**
@@ -147,6 +147,17 @@ class ProductController extends Controller
         }
     }
 
+/**
+ * Updates the specified product in the database with the given validated data.
+ *
+ * @param int $id The ID of the product to update.
+ * @param array $validated The validated data containing the updated product details, including optional image.
+ *
+ * @return \Illuminate\Http\JsonResponse JSON response indicating success or error message.
+ *
+ * @throws \Illuminate\Database\Eloquent\ModelNotFoundException If the product is not found.
+ * @throws \Exception If there is an error during the update process.
+ */
     protected function updateProduct($id, $validated)
     {
         try {
@@ -178,6 +189,17 @@ class ProductController extends Controller
         }
     }
 
+/**
+ * Places an order for a specified product, updates its quantity, and records sales information.
+ *
+ * @param int $id The ID of the product to order.
+ * @param array $validated The validated data containing ordered quantity and total price.
+ *
+ * @return \Illuminate\Http\JsonResponse JSON response indicating success or error message.
+ *
+ * @throws \Illuminate\Database\Eloquent\ModelNotFoundException If the product is not found.
+ * @throws \Exception If there is an error during the ordering process.
+ */
     protected function orderProduct($id,$validated)
     {
         try {

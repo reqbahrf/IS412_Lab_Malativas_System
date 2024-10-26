@@ -286,8 +286,8 @@ class Product {
 
   getErrorMessage(error) {
     if (error.responseJSON) {
-      return `${error.responseJSON.error}`;
-    } else if (error.request) {
+      return `${error.responseJSON.error || error.responseJSON.message}`;
+    } else if (error.message) {
       return 'Network error. Please try again later.';
     } else {
       return 'Error: ' + error.message;
