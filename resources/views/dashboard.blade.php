@@ -196,13 +196,13 @@
                   <label for="category" class="block text-sm font-medium text-gray-700">Category</label>
                   <select name="category" id="category" class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm">
                     <option value="">Select a Category</option>
-                    <option value="building_materials">Building Materials</option>
-                    <option value="tools">Tools</option>
-                    <option value="plumbing_supplies">Plumbing Supplies</option>
-                    <option value="electrical_supplies">Electrical Supplies</option>
-                    <option value="paint_and_decorating_supplies">Paint and Decorating Supplies</option>
-                    <option value="hardware_and_fasteners">Hardware and Fasteners</option>
-                    <option value="lawn_and_garden_supplies">Lawn and Garden Supplies</option>
+                    <option value="Building Materials">Building Materials</option>
+                    <option value="Tools">Tools</option>
+                    <option value="Plumbing Supplies">Plumbing Supplies</option>
+                    <option value="Electrical Supplies">Electrical Supplies</option>
+                    <option value="Paint and Decorating Supplies">Paint and Decorating Supplies</option>
+                    <option value="Hardware and Fasteners">Hardware and Fasteners</option>
+                    <option value="Lawn and Garden Supplies">Lawn and Garden Supplies</option>
                   </select>
                 </div>
                 <div class="flex items-center w-full">
