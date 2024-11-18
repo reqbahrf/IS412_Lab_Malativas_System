@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login</title>
+    <title>Register</title>
     @vite('resources/css/app.css')
 </head>
 
@@ -16,12 +16,12 @@
         </div>
     </header>
 
-    <!-- Login Form -->
-    <div class=" flex justify-center items-center relative min-h-screen bg-cover bg-no-repeat"
+    <!-- Registration Form -->
+    <div class="flex justify-center items-center relative min-h-screen bg-cover bg-no-repeat"
         style="background-image: url('{{ asset('Assets/indexpage/pagebackground.webp') }}')"">
         <div class="w-96 rounded-lg bg-white p-8 shadow-lg">
-            <h2 class="mb-6 text-center text-2xl font-semibold">Login</h2>
-            <form method="POST" action="{{ route('submit_login') }}">
+            <h2 class="mb-6 text-center text-2xl font-semibold">Sign Up</h2>
+            <form method="POST" action="{{ route('submit_register') }}">
                 @csrf
                 @if (session()->has('error'))
                     <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
@@ -29,14 +29,25 @@
                     </div>
                 @endif
                 <div class="mb-4">
-                    <label for="loginUsed" class="mb-2 block">Username or Email</label>
-                    <input name="loginUsed" type="text" class="w-full rounded-lg border px-4 py-2"
-                        placeholder="Enter your username or email" value="{{ old('loginUsed') }}" required/>
+                    <label for="username" class="mb-2 block">Username</label>
+                    <input name="username" type="text" class="w-full rounded-lg border px-4 py-2"
+                        placeholder="Choose a unique username" value="{{ old('username') }}" required/>
+                    @error('username')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+                <div class="mb-4">
+                    <label for="email" class="mb-2 block">Email</label>
+                    <input name="email" type="email" class="w-full rounded-lg border px-4 py-2"
+                        placeholder="Enter your email" value="{{ old('email') }}" required/>
+                    @error('email')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
                 <div class="mb-4 relative">
-                    <label for="password" class="mb-2 block">Password:</label>
+                    <label for="password" class="mb-2 block">Password</label>
                     <input name="password" type="password" class="w-full rounded-lg border px-4 py-2 pr-10"
-                        placeholder="********" id="password" required/>
+                        placeholder="Create a password" id="password" required/>
                     <button type="button" class="absolute right-2 top-[60%]" id="toggle_Password">
                         <svg width="18px" height="18px" viewBox="0 0 24 24" fill="none"
                             xmlns="http://www.w3.org/2000/svg">
@@ -52,16 +63,21 @@
                             </g>
                         </svg>
                     </button>
+                    @error('password')
+                        <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                    @enderror
                 </div>
-                <div class="mb-4 flex items-center justify-between">
-                    <a href="#" class="text-teal-800">Forgot password?</a>
+                <div class="mb-4 relative">
+                    <label for="password_confirmation" class="mb-2 block">Confirm Password</label>
+                    <input name="password_confirmation" type="password" class="w-full rounded-lg border px-4 py-2 pr-10"
+                        placeholder="Confirm your password" id="password_confirmation" required/>
                 </div>
                 <button type="submit"
                     class="w-full rounded-lg bg-teal-800 py-2 px-4 block text-center text-white transition hover:bg-teal-700">
-                    Login
+                    Create Account
                 </button>
                 <div class="mt-4 text-center">
-                    <span>New member? </span><a href="/register" class="text-teal-800">Sign Up</a>
+                    <span>Already have an account? </span><a href="/login" class="text-teal-800">Login</a>
                 </div>
             </form>
         </div>

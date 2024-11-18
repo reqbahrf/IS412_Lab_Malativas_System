@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use PhpParser\Node\Stmt\TryCatch;
 
 class AuthController extends Controller
@@ -13,7 +15,7 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'loginUsed' => 'required|sometimes:email',
+                'loginUsed' => 'required',
                 'password' => 'required|min:8'
             ]);
 
@@ -32,6 +34,30 @@ class AuthController extends Controller
         }
     }
 
+    public function register(Request $request)
+    {
+        try {
+            $request->validate([
+                'username' => 'required|string|max:255|unique:users',
+                'email' => 'required|string|email|max:255|unique:users',
+                'password' => 'required|string|min:8|confirmed',
+            ]);
+
+            $user = User::create([
+                'username' => $request->username,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
+
+            Auth::login($user);
+
+            return redirect()->route('dashboard')->with('success', 'Registration successful!');
+        } catch (Exception $e) {
+            return redirect()->route('register')
+                ->with('error', 'Registration failed: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
 
     public function logout(Request $request)
     {

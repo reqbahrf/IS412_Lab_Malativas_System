@@ -19,6 +19,13 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::post('/login', [AuthController::class, 'login'])
     ->name('submit_login');
 
+Route::get('/register', function () {
+    return view('register');
+})->name('register');
+
+Route::post('/register', [AuthController::class, 'register'])
+    ->name('submit_register');
+
 Route::middleware('auth')->group(function () {
 
     Route::get('/dashboard', function () {
@@ -30,5 +37,3 @@ Route::middleware('auth')->group(function () {
     Route::get('/sold-products', SalesController::class)
         ->name('sold-products');
 });
-
-
